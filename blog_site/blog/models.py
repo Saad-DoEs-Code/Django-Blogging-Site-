@@ -7,7 +7,7 @@ from django.utils import timezone
 class Post(models.Model):
 
     # auth.User refers to the Super User, that was created in "auth" app.
-    author = models.ForeignKey("auth.User")
+    author = models.ForeignKey("auth.User", on_delete= models.CASCADE)
     title = models.CharField(max_length=200)
     text = models.TextField()
     created_date = models.DateTimeField(default=timezone.now())
@@ -29,7 +29,7 @@ class Post(models.Model):
     
 class Comment(models.Model):
     # This related_name = "comments" will be pointing to the approved_comments() of Post Model.
-    post = models.ForeignKey("blog.Post", related_name="comments")
+    post = models.ForeignKey("blog.Post", related_name="comments", on_delete=models.CASCADE)
     author = models.CharField(max_length=50)
     text = models.TextField()
     created_date = models.DateTimeField(default=timezone.now())

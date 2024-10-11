@@ -1,12 +1,13 @@
 from typing import Any
 from django.db.models.query import QuerySet
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import (TemplateView, ListView, DetailView, CreateView, UpdateView, DeleteView)
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.urls import reverse_lazy
 from blog.models import Post, Comment
-from blog.forms import PostForm
+from blog.forms import PostForm, CommentForm
 
 
 # Create your views here.
@@ -51,3 +52,45 @@ class DraftListView(ListView, LoginRequiredMixin):
 
     def get_queryset(self) -> QuerySet[Any]:
         return super().get_queryset().filter(published_date__isnull=True).order_by("-created_date")
+
+
+##############################################################################
+##############################################################################
+
+@login_required
+def add_comment_on_post(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+
+    if request.method == "POST":
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment = comment.post
+            comment.save()
+            return redirect('post_detail', {"pk":post.pk})
+    else:
+        form = CommentForm()
+    return render(request, 'blog/comment_form.html', {"form":form})
+
+@login_required
+def approve_comment_view(request, pk):
+    comment = get_object_or_404(Comment, pk=pk)
+    comment.approve_comment()
+    comment.save()
+
+    return redirect('post_detail', pk= comment.post.pk)\
+    
+@login_required
+def delete_comment(request,pk):
+
+    comment = get_object_or_404(Comment, pk=pk)
+    post_pk = comment.post.pk
+    comment.delete()
+
+    return redirect('post_detail', pk= post_pk)
+
+@login_required
+def publish_post(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    post.publish_post()
+    return render("post_detail", pk= post.pk)
